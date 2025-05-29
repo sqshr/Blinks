@@ -6,7 +6,16 @@ import subprocess
 import argparse
 import time
 
-current_path = os.getcwd()
+#current_path = os.getcwd()
+current_path = os.path.abspath(os.path.dirname(__file__))
+#if not args.output:
+#    output_path = current_path
+#else:
+#    output_path = os.path.abspath(args.output)
+#    if not os.path.isdir(outputpath):
+#        os.mkdir(output_path)
+
+
 new_target_file_path = os.path.join(current_path, 'new_target.txt')
 config_file_path = os.path.join(current_path, 'config.json')
 burpconfig = os.path.join(current_path,"burpconfig","userconfig.json")
@@ -141,6 +150,7 @@ def main():
     ''')
     parser = argparse.ArgumentParser(description='BLINKS\n v0.4b Author: Punit(0xAnuj)\n Usage: python external.py -u http://example.com -r HTML -w https:/webhook.com/webhook ')
     parser.add_argument('-u','--url', help='Single URL to process')
+    parser.add_argument('-o','--output', help='Directory to store output. By default this is the directory Blinks is stored in.', default=False)
     parser.add_argument('-f','--file', help='File containing URLs to process')
     parser.add_argument('-w','--webhook', default=None, help='Webhook URL (default: NULL)')
     parser.add_argument('-t','--timelimit', default=0, help='Time limited testing [Mins] (default: Limitless)')
