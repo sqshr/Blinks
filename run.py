@@ -9,10 +9,15 @@ import time
 current_path = os.getcwd()
 new_target_file_path = os.path.join(current_path, 'new_target.txt')
 config_file_path = os.path.join(current_path, 'config.json')
-burpconfig = f"{current_path}/burpconfig/userconfig.json"
-data_folder  = f"{current_path}/data"
+burpconfig = os.path.join(current_path,"burpconfig","userconfig.json")
+data_folder  = os.path.join(current_path,"data")
 files = glob.glob(f"{data_folder}/*")
 
+outdirs=['logs','data','reports']
+for d in outdirs:
+    dl = os.path.join(current_path,d)
+    if not os.path.isdir(dl):
+        os.mkdir(dl)
 
 new_extension = {
     "errors": "console",
@@ -74,7 +79,7 @@ def is_url_alive(url):
     if not url.startswith(('http://', 'https://')):
         url = 'http://' + url 
     try:
-        response = httpx.get(url, timeout=5)
+        response = httpx.get(url, timeout=5, verify=False)
         return response.status_code
     except httpx.RequestError:
         return False
