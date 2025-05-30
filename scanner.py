@@ -10,6 +10,7 @@ import time
 import re,os
 import json
 
+
 class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueItem):
 
     isActiveScanActive = False  
@@ -28,12 +29,15 @@ class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueIte
         callbacks.registerScannerListener(self)
         callbacks.registerHttpListener(self)
         self.isActiveScanActive = False
+        #self.current_dir = os.path.abspath(os.path.dirname(__file__))
         self.current_dir = os.getcwd()
+        #self.log_message("OUTPUT DIRECTORY IS: "+self.output_path)
         self.extConfig = self.load_config("{}/config.json".format(self.current_dir))
-        self.log_file = "{}/logs/scan_status_{}.log".format(self.current_dir,self.extConfig["initialURL"]["host"])
-        self.crawled_requests_file = "{}/data/crawled_data_{}_{}.txt".format(self.current_dir,self.extConfig["initialURL"]["host"],datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-        self.active_requests_file = "{}/data/active_check_{}_{}.txt".format(self.current_dir,self.extConfig["initialURL"]["host"],datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-        self.proxy_requests_file = "{}/data/proxy_data_{}_{}.txt".format(self.current_dir,self.extConfig["initialURL"]["host"],datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        self.output_dir = self.extConfig['OutputPath']
+        self.log_file = "{}/logs/scan_status_{}.log".format(self.output_dir,self.extConfig["initialURL"]["host"])
+        self.crawled_requests_file = "{}/data/crawled_data_{}_{}.txt".format(self.output_dir,self.extConfig["initialURL"]["host"],datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        self.active_requests_file = "{}/data/active_check_{}_{}.txt".format(self.output_dir,self.extConfig["initialURL"]["host"],datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        self.proxy_requests_file = "{}/data/proxy_data_{}_{}.txt".format(self.output_dir,self.extConfig["initialURL"]["host"],datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
         self.report_name = self.extConfig["initialURL"]["host"]
         self.reporttype = self.extConfig["reporttype"]
         self.webhookURL = self.extConfig["webhookurl"]
@@ -191,7 +195,7 @@ class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueIte
     def end_scan_due_to_time_limit(self):
         self.log_message("Time limit reached. Finalizing scan and generating final report.")
         self.report_file = "{}/reports/Final_scan_report_{}_{}.{}".format(
-            self.current_dir,
+            self.output_dir,
             self.report_name,
             datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),
             self.reporttype
@@ -265,7 +269,7 @@ class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueIte
                             stable_time = time.time()
                         elif time.time() - stable_time > 120:
                             self.log_message("Active scan completed. Finalizing report.")
-                            self.report_file = "{}/reports/Final_scan_report_{}_{}.{}".format(self.current_dir,self.report_name,datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),self.reporttype)
+                            self.report_file = "{}/reports/Final_scan_report_{}_{}.{}".format(self.output_dir,self.report_name,datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),self.reporttype)
                             self.generate_report(self.reporttype, self.report_file, is_final=True)
                             self._callbacks.exitSuite(False)
                             break
@@ -301,11 +305,11 @@ class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueIte
             report_suffix = "FINAL" if is_final else "PENDING"
             if is_final:
                 report_file_path = "{}/reports/{}_scan_report_{}_{}.{}".format(
-                    self.current_dir, report_suffix, self.report_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"), reportType
+                    self.output_dir, report_suffix, self.report_name, datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"), reportType
                 )
             else:
                 report_file_path = "{}/reports/{}_scan_report_{}.{}".format(
-                    self.current_dir, report_suffix, self.report_name, reportType
+                    self.output_dir, report_suffix, self.report_name, reportType
                 )    
 
             if issues:
@@ -323,7 +327,7 @@ class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueIte
 
     def generate_final_report_and_exit(self):
         """Generates the final report and exits Burp."""
-        self.report_file = "{}/reports/Final_scan_report_{}_{}.{}".format(self.current_dir,self.report_name,datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),self.reporttype)
+        self.report_file = "{}/reports/Final_scan_report_{}_{}.{}".format(self.output_dir,self.report_name,datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"),self.reporttype)
         self.generate_report(self.reporttype, self.report_file, is_final=True)
         self._callbacks.exitSuite(False)
 
@@ -472,7 +476,7 @@ class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueIte
     def newScanIssue(self, issue):
         self.log_message("New scan issue identified: {}".format(issue.getIssueName()))
         self.last_issue_time = datetime.datetime.now()  # Update last issue time
-        self.report_file = "{}/reports/SCAN_PENDING_issues_report_{}.{}".format(self.current_dir, self.report_name, self.reporttype)
+        self.report_file = "{}/reports/SCAN_PENDING_issues_report_{}.{}".format(self.output_dir, self.report_name, self.reporttype)
         self.generate_report(self.reporttype, self.report_file)
 
         try:
@@ -514,7 +518,7 @@ class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueIte
             json_data = json.dumps(issue_details, ensure_ascii=False).encode('utf-8')
             
             self.send_issue_to_webhook(json_data)
-            self.report_file = "{}/reports/SCAN_PENDING_issues_report_{}.{}".format(self.current_dir, self.report_name, self.reporttype)
+            self.report_file = "{}/reports/SCAN_PENDING_issues_report_{}.{}".format(self.output_dir, self.report_name, self.reporttype)
             self.generate_report(self.reporttype, self.report_file)
 
         except Exception as e:

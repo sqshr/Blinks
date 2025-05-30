@@ -8,12 +8,6 @@ import time
 
 #current_path = os.getcwd()
 current_path = os.path.abspath(os.path.dirname(__file__))
-#if not args.output:
-#    output_path = current_path
-#else:
-#    output_path = os.path.abspath(args.output)
-#    if not os.path.isdir(outputpath):
-#        os.mkdir(output_path)
 
 
 new_target_file_path = os.path.join(current_path, 'new_target.txt')
@@ -22,11 +16,6 @@ burpconfig = os.path.join(current_path,"burpconfig","userconfig.json")
 data_folder  = os.path.join(current_path,"data")
 files = glob.glob(f"{data_folder}/*")
 
-outdirs=['logs','data','reports']
-for d in outdirs:
-    dl = os.path.join(current_path,d)
-    if not os.path.isdir(dl):
-        os.mkdir(dl)
 
 new_extension = {
     "errors": "console",
@@ -34,7 +23,7 @@ new_extension = {
     "extension_type": "python",
     "loaded": True,
     "name": "Headless Crawl and Audit",
-    "output": "ui"
+    "output": "console"
 }
 
 with open(config_file_path, 'r') as file:
@@ -113,6 +102,7 @@ def update_config(url, webhook, reporttype, crawlonly, config_template):
         raise ValueError("Invalid report type. Only 'HTML' and 'XML' are allowed.")
     config_template["reporttype"] = reporttype
     config_template["crawlonly"] = crawlonly if crawlonly else None
+    config_template["OutputPath"] = output_path
     return config_template
 
 def perform_task(url, webhook, reporttype, crawlonly, config_template):
@@ -162,6 +152,21 @@ def main():
 
 
     args = parser.parse_args()
+
+    global output_path
+    if not args.output:
+        output_path = current_path
+    else:
+        output_path = os.path.abspath(args.output)
+    print(output_path)
+
+    outdirs=['logs','data','reports']
+    for d in outdirs:
+        dl = os.path.join(output_path,d)
+        if not os.path.isdir(dl):
+            os.mkdir(dl)
+
+
     if args.url and args.file:
         parser.error("Specify only one of --url or --file, not both.")
     if not args.url and not args.file:
