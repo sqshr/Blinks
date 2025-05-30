@@ -5,67 +5,12 @@ import httpx
 import subprocess
 import argparse
 import time
+import shutil
 
 #current_path = os.getcwd()
-current_path = os.path.abspath(os.path.dirname(__file__))
 
 
-new_target_file_path = os.path.join(current_path, 'new_target.txt')
-config_file_path = os.path.join(current_path, 'config.json')
-burpconfig = os.path.join(current_path,"burpconfig","userconfig.json")
-data_folder  = os.path.join(current_path,"data")
-files = glob.glob(f"{data_folder}/*")
-
-
-new_extension = {
-    "errors": "console",
-    "extension_file": os.path.join(current_path, "scanner.py"),
-    "extension_type": "python",
-    "loaded": True,
-    "name": "Headless Crawl and Audit",
-    "output": "console"
-}
-
-with open(config_file_path, 'r') as file:
-    config_template = json.load(file)
-print("[+]: Blinks config loaded.")
-jython_jar_path = config_template.get("jythonPath")
-burp_path = config_template.get("BurpPath")
-if not jython_jar_path or not burp_path:
-    print("[!]: ERROR: 'jythonPath' or 'BurpPath' is not set in config.json.")
-    exit()
-with open(burpconfig, 'r') as file:
-    burp_config_template = json.load(file)
-
-extension_already_present = False
-
-if 'user_options' in burp_config_template and 'extender' in burp_config_template['user_options']:
-    extensions_list = burp_config_template['user_options']['extender'].get('extensions', [])
-
-    for ext in extensions_list:
-        if ext.get('extension_file') == new_extension['extension_file'] and ext.get('name') == new_extension['name']:
-            extension_already_present = True
-            break
-
-    if not extension_already_present:
-        extensions_list.append(new_extension)
-        burp_config_template['user_options']['extender']['extensions'] = extensions_list
-else:
-    burp_config_template['user_options'] = {
-        'extender': {
-            'extensions': [new_extension]
-        }
-    }
-
-if 'python' in burp_config_template['user_options']['extender']:
-    burp_config_template['user_options']['extender']['python']['location_of_jython_standalone_jar_file'] = jython_jar_path
-else:
-    burp_config_template['user_options']['extender']['python'] = {
-        'location_of_jython_standalone_jar_file': jython_jar_path
-    }
-
-
-def update_burp_config():
+def update_burp_config(burpconfig,burp_config_template):
     with open(burpconfig, 'w') as f:
             json.dump(burp_config_template, f, indent=4)    
   
@@ -87,7 +32,7 @@ def write_alive_urls(file_path, urls):
         for url in urls:
             file.write(url + '\n')
 
-def update_blinks_config():
+def update_blinks_config(config_file_path,config_template):
     with open(config_file_path, 'w') as file:
         json.dump(config_template, file, indent=4)
 
@@ -105,10 +50,10 @@ def update_config(url, webhook, reporttype, crawlonly, config_template):
     config_template["OutputPath"] = output_path
     return config_template
 
-def perform_task(url, webhook, reporttype, crawlonly, config_template):
+def perform_task(url, webhook, reporttype, crawlonly, config_template, config_file_path, current_path, burpconfig):
     config_template = update_config(url, webhook, reporttype, crawlonly, config_template)
 
-    update_blinks_config()
+    update_blinks_config(config_file_path,config_template)
     
     burp_path = config_template.get("BurpPath")
     project_file = os.path.join(current_path, config_template["initialURL"]["host"])
@@ -152,19 +97,80 @@ def main():
 
 
     args = parser.parse_args()
-
+    current_path = os.path.abspath(os.path.dirname(__file__))
+    
     global output_path
     if not args.output:
         output_path = current_path
     else:
         output_path = os.path.abspath(args.output)
-    print(output_path)
 
-    outdirs=['logs','data','reports']
+    outdirs=['logs','data','reports','burpconfig']
     for d in outdirs:
         dl = os.path.join(output_path,d)
         if not os.path.isdir(dl):
             os.mkdir(dl)
+
+    shutil.copy(os.path.join(current_path,"config.json"),output_path)
+    shutil.copy(os.path.join(current_path,"burpconfig","userconfig.json"),os.path.join(output_path,"burpconfig"))
+    if output_path != current_path:
+        current_path = output_path
+
+
+    new_target_file_path = os.path.join(current_path, 'new_target.txt')
+    config_file_path = os.path.join(current_path, 'config.json')
+    burpconfig = os.path.join(current_path,"burpconfig","userconfig.json")
+    data_folder  = os.path.join(current_path,"data")
+    files = glob.glob(f"{data_folder}/*")
+    
+
+    new_extension = {
+        "errors": "console",
+        "extension_file": os.path.join(current_path, "scanner.py"),
+        "extension_type": "python",
+        "loaded": True,
+        "name": "Headless Crawl and Audit",
+        "output": "console"
+    }
+
+    with open(config_file_path, 'r') as file:
+        config_template = json.load(file)
+    print("[+]: Blinks config loaded.")
+    jython_jar_path = config_template.get("jythonPath")
+    burp_path = config_template.get("BurpPath")
+    if not jython_jar_path or not burp_path:
+        print("[!]: ERROR: 'jythonPath' or 'BurpPath' is not set in config.json.")
+        exit()
+    with open(burpconfig, 'r') as file:
+        burp_config_template = json.load(file)
+
+    extension_already_present = False
+
+    if 'user_options' in burp_config_template and 'extender' in burp_config_template['user_options']:
+        extensions_list = burp_config_template['user_options']['extender'].get('extensions', [])
+
+        for ext in extensions_list:
+            if ext.get('extension_file') == new_extension['extension_file'] and ext.get('name') == new_extension['name']:
+                extension_already_present = True
+                break
+
+        if not extension_already_present:
+            extensions_list.append(new_extension)
+            burp_config_template['user_options']['extender']['extensions'] = extensions_list
+    else:
+        burp_config_template['user_options'] = {
+            'extender': {
+                'extensions': [new_extension]
+            }
+        }
+
+    if 'python' in burp_config_template['user_options']['extender']:
+        burp_config_template['user_options']['extender']['python']['location_of_jython_standalone_jar_file'] = jython_jar_path
+    else:
+        burp_config_template['user_options']['extender']['python'] = {
+            'location_of_jython_standalone_jar_file': jython_jar_path
+        }
+
 
 
     if args.url and args.file:
@@ -176,7 +182,7 @@ def main():
         print("[+] Crawl Only Enabled, find crawled requests data under ./data/ ")
 
     if not extension_already_present:
-        update_burp_config()
+        update_burp_config(burpconfig,burp_config_template)
         print("Extension added to the Burp configuration.")
 
     if args.reset:
@@ -196,22 +202,22 @@ def main():
         timelimit = args.timelimit
         print(f"[+] Time Limited Testing Initiated for each Active Scan, Time: {timelimit} mins\n")
         config_template["time"] = time
-        update_blinks_config()
+        update_blinks_config(config_file_path,config_template)
     else:
         config_template["time"] = 0
-        update_blinks_config()
+        update_blinks_config(config_file_path,config_template)
 
     if args.socks5:
         print("[+] Sock5 Enabled, Listening at 127.0.0.1:9090")
         burp_config_template['user_options']['connections']['socks_proxy']['use_proxy'] = True
-        update_burp_config()
+        update_burp_config(burpconfig,burp_config_template)
     else:
         burp_config_template['user_options']['connections']['socks_proxy']['use_proxy'] = False
-        update_burp_config()  
+        update_burp_config(burpconfig,burp_config_template)
 
     headers = args.header if args.header else []
     config_template["headers"] = headers
-    update_blinks_config()
+    update_blinks_config(config_file_path,config_template)
 
 
     urls = []
@@ -231,7 +237,7 @@ def main():
 
     new_urls = read_urls(new_target_file_path)
     for url in new_urls:
-        perform_task(url, args.webhook, args.reporttype, args.crawlonly, config_template)
+        perform_task(url, args.webhook, args.reporttype, args.crawlonly, config_template, config_file_path, current_path, burpconfig)
         print("[+] Halting for 5 seconds")
         time.sleep(5)
 
