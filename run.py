@@ -9,6 +9,44 @@ import shutil
 
 #current_path = os.getcwd()
 
+def get_bapps():
+    extensions = []
+    userdir = os.path.expanduser("~")
+    bappsdir = os.path.abspath(os.path.join(userdir,".BurpSuite","bapps"))
+
+    if not os.path.isdir(bappsdir):
+        print("Bapps directory doesn't exist")
+        exit(1)
+
+    bappdirlist = os.listdir(bappsdir)
+
+    for bappdir in bappdirlist:
+        directory = os.path.join(bappsdir,bappdir)
+        manifestfile = "BappManifest.bmf"
+        m = open(os.path.join(directory,manifestfile))
+        manifest = m.readlines()
+        m.close()
+        for line in manifest:
+            linelist = line.strip().split(":")
+            key = linelist[0].strip()
+            value=linelist[1].strip()
+            match key:
+                case "Name":
+                    bappname = value
+                case "EntryPoint":
+                    bappfile = os.path.join(directory,value)
+        extension = bappfile.split(".")[-1]
+
+        match extension:
+            case "jar":
+                bapptype = "java"
+            case "py":
+                bapptype = "python"
+            case "rb":
+                bapptype = "ruby"
+
+        extensions.append({"errors":"console","loaded":True,"output":"console","extension_file":bappfile,"name":bappname,"extension_type":bapptype})
+    return extensions
 
 def update_burp_config(burpconfig,burp_config_template):
     with open(burpconfig, 'w') as f:
@@ -94,6 +132,7 @@ def main():
     parser.add_argument('--crawlonly', action='store_true', help='Perfom crawl only scan, it will save all crawled requests under ./data/')
     parser.add_argument('--socks5', action='store_true', help='Use socks5 for VPN at localhost:9090')
     parser.add_argument('--reset', action='store_true', help='Reset all active/crawl data')
+    parser.add_argument('--bapps', action='store_true', help='Automatically include all bapps in the scan',default=False)
 
 
     args = parser.parse_args()
@@ -171,6 +210,11 @@ def main():
             'location_of_jython_standalone_jar_file': jython_jar_path
         }
 
+    if args.bapps:
+        extensions = get_bapps()
+        burp_config_template['user_options']['extender']['extensions'].extend(extensions)
+        print(type(burp_config_template['user_options']['extender']['extensions']))
+        print(burp_config_template['user_options']['extender']['extensions'])
 
 
     if args.url and args.file:
@@ -180,6 +224,8 @@ def main():
 
     if args.crawlonly:
         print("[+] Crawl Only Enabled, find crawled requests data under ./data/ ")
+
+
 
     if not extension_already_present:
         update_burp_config(burpconfig,burp_config_template)

@@ -1,7 +1,7 @@
 {
     "initialURL": {
-        "url": "https://www.example.com",
-        "host": "www.example..com",
+        "url": "https://staging.abriska.com",
+        "host": "staging.abriska.com",
         "port": 443,
         "protocol": "https"
     },
@@ -13,8 +13,6 @@
     "headers": [],
     "time": 0,
     "staticFileExt": [
-        "css",
-        "js",
         "png",
         "jpg",
         "jpeg",
@@ -24,5 +22,5 @@
     "exclusions": [],
     "BurpPath": "/usr/share/burpsuite-pro/burpsuite-pro.jar",
     "jythonPath": "/opt/jython/jython.jar",
-    "OutputPath": "/output/path/here/"
+    "OutputPath": "/tmp/blinks"
 }
