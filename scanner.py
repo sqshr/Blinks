@@ -9,6 +9,7 @@ from threading import Thread, Event, Lock,Timer
 import time
 import re,os
 import json
+import glob
 
 
 class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueItem):
@@ -30,9 +31,16 @@ class BurpExtender(IBurpExtender, IScannerListener, IHttpListener, IScanQueueIte
         callbacks.registerHttpListener(self)
         self.isActiveScanActive = False
         #self.current_dir = os.path.abspath(os.path.dirname(__file__))
-        self.current_dir = os.getcwd()
+        auto_config_dir = os.path.join("/tmp/blinks_auto_config/*")
+        filelist = glob.glob(auto_config_dir)
+        print(filelist)
+        correct_config_file = max(filelist, key=os.path.getctime)
+        print(correct_config_file)
+        cfpath = os.path.join(auto_config_dir,correct_config_file)
+        print(cfpath)
         #self.log_message("OUTPUT DIRECTORY IS: "+self.output_path)
-        self.extConfig = self.load_config("{}/config.json".format(self.current_dir))
+        self.extConfig = self.load_config(cfpath)
+        #self.extConfig = self.load_config("{}/config.json".format(self.current_dir))
         self.output_dir = self.extConfig['OutputPath']
         self.log_file = "{}/logs/scan_status_{}.log".format(self.output_dir,self.extConfig["initialURL"]["host"])
         self.crawled_requests_file = "{}/data/crawled_data_{}_{}.txt".format(self.output_dir,self.extConfig["initialURL"]["host"],datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))

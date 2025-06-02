@@ -95,6 +95,11 @@ def perform_task(url, webhook, reporttype, crawlonly, config_template, config_fi
     
     burp_path = config_template.get("BurpPath")
     project_file = os.path.join(current_path, config_template["initialURL"]["host"])
+    auto_config_dir = os.path.join("/tmp/blinks_auto_config")
+    if not os.path.isdir(auto_config_dir):
+        os.mkdir(auto_config_dir)
+    timesecs = str(int(time.time()))
+    shutil.copy(config_file_path,os.path.join(auto_config_dir,timesecs+".json"))
     print("[+] Running Burp Suite")
     command = f"java -Xmx1G -Djava.awt.headless=true -jar {burp_path} --user-config-file={burpconfig} --unpause-spider-and-scanner"
     try:
@@ -232,6 +237,7 @@ def main():
         print("Extension added to the Burp configuration.")
 
     if args.reset:
+        print(files)
         if files:
             for file in files:
                 try:
@@ -269,6 +275,7 @@ def main():
     urls = []
     if args.url:
         urls.append(args.url)
+
     elif args.file:
         urls = read_urls(args.file)
 
