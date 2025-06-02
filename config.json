@@ -1,7 +1,7 @@
 {
     "initialURL": {
-        "url": "https://staging.abriska.com",
-        "host": "staging.abriska.com",
+        "url": "",
+        "host": "",
         "port": 443,
         "protocol": "https"
     },
