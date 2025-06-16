@@ -142,6 +142,7 @@ def main():
 
     args = parser.parse_args()
     current_path = os.path.abspath(os.path.dirname(__file__))
+    scanner_path = current_path
     print(current_path)
     
     global output_path
@@ -171,7 +172,7 @@ def main():
 
     new_extension = {
         "errors": "console",
-        "extension_file": os.path.join(current_path, "scanner.py"),
+        "extension_file": os.path.join(scanner_path, "scanner.py"),
         "extension_type": "python",
         "loaded": True,
         "name": "Headless Crawl and Audit",
