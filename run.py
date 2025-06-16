@@ -142,6 +142,7 @@ def main():
 
     args = parser.parse_args()
     current_path = os.path.abspath(os.path.dirname(__file__))
+    print(current_path)
     
     global output_path
     if not args.output:
@@ -155,9 +156,9 @@ def main():
         if not os.path.isdir(dl):
             os.mkdir(dl)
 
-    shutil.copy(os.path.join(current_path,"config.json"),output_path)
-    shutil.copy(os.path.join(current_path,"burpconfig","userconfig.json"),os.path.join(output_path,"burpconfig"))
     if output_path != current_path:
+        shutil.copy(os.path.join(current_path,"config.json"),output_path)
+        shutil.copy(os.path.join(current_path,"burpconfig","userconfig.json"),os.path.join(output_path,"burpconfig"))
         current_path = output_path
 
 
